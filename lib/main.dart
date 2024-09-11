@@ -1,76 +1,89 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'auth_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Canteen Management',
-      theme: _buildTheme(context),
-      home: const HomePage(),
-    );
-  }
-
-  ThemeData _buildTheme(BuildContext context) {
-    return ThemeData(
-      primarySwatch: Colors.blue,
-      scaffoldBackgroundColor: Colors.transparent,
-      textTheme: Theme.of(context).textTheme.apply(
-        fontFamily: 'Roboto',
-        bodyColor: Colors.white,
-        displayColor: Colors.white,
-      ).copyWith(
-        bodyLarge: const TextStyle(fontWeight: FontWeight.bold),
-        bodyMedium: const TextStyle(fontWeight: FontWeight.bold),
-        labelLarge: const TextStyle(fontWeight: FontWeight.bold),
-        titleLarge: const TextStyle(fontWeight: FontWeight.bold),
-      ),
+      title: 'Firebase Auth Demo',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: AuthPage(),
     );
   }
 }
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class AuthPage extends StatefulWidget {
+  @override
+  _AuthPageState createState() => _AuthPageState();
+}
+
+class _AuthPageState extends State<AuthPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  bool _isSignUp = true;
+
+  Future<void> _authAction() async {
+    try {
+      if (_isSignUp) {
+        await _auth.createUserWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+        print('User signed up');
+      } else {
+        await _auth.signInWithEmailAndPassword(
+          email: _emailController.text,
+          password: _passwordController.text,
+        );
+        print('User signed in');
+      }
+    } catch (e) {
+      print('Error: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildBackgroundImage(),
-          _buildDarkOverlay(),
-          AuthPage(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBackgroundImage() {
-    return Image.asset(
-      'assets/background.jpg',
-      fit: BoxFit.cover,
-    );
-  }
-
-  Widget _buildDarkOverlay() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            Colors.black.withOpacity(0.7),
-            Colors.black.withOpacity(0.7),
+      appBar: AppBar(title: Text(_isSignUp ? 'Sign Up' : 'Sign In')),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: _emailController,
+              decoration: InputDecoration(labelText: 'Email'),
+            ),
+            SizedBox(height: 16.0),
+            TextField(
+              controller: _passwordController,
+              decoration: InputDecoration(labelText: 'Password'),
+              obscureText: true,
+            ),
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: _authAction,
+              child: Text(_isSignUp ? 'Sign Up' : 'Sign In'),
+            ),
+            TextButton(
+              onPressed: () {
+                setState(() {
+                  _isSignUp = !_isSignUp;
+                });
+              },
+              child: Text(_isSignUp
+                  ? 'Already have an account? Sign In'
+                  : 'Don\'t have an account? Sign Up'),
+            ),
           ],
         ),
       ),
